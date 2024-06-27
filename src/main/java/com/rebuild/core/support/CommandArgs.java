@@ -11,7 +11,7 @@ import cn.devezhao.commons.ObjectUtils;
 import org.apache.commons.lang.BooleanUtils;
 
 /**
- * 命令行参数
+ * 命令行保留参数
  *
  * @author RB
  * @since 2023/2/4
@@ -26,9 +26,16 @@ public class CommandArgs {
     public static final String _HeavyStopWatcher = "_HeavyStopWatcher";
     public static final String _UniPush = "_UniPush";
 
+    public static final String _UseDbFullText = "_UseDbFullText";
+    public static final String _SmsDistributor = "_SmsDistributor";
+    public static final String _EmailDistributor = "_EmailDistributor";
+    public static final String _StartEntityTypeCode = "_StartEntityTypeCode";
+    public static final String _UseFrontJSAnywhere = "_UseFrontJSAnywhere";
+    public static final String _TriggerMaxDepth = "_TriggerMaxDepth";
+
     /**
      * @param name
-     * @return default false
+     * @return default `false`
      */
     public static boolean getBoolean(String name) {
         return BooleanUtils.toBoolean(System.getProperty(name));
@@ -36,10 +43,20 @@ public class CommandArgs {
 
     /**
      * @param name
-     * @return default -1
+     * @return default `-1`
      */
-    public static int getInteger(String name) {
+    public static int getInt(String name) {
         return ObjectUtils.toInt(System.getProperty(name), -1);
+    }
+
+    /**
+     * @param name
+     * @param defaultValue
+     * @return
+     */
+    public static int getInt(String name, int defaultValue) {
+        int s = getInt(name);
+        return s == -1 ? defaultValue : s;
     }
 
     /**

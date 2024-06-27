@@ -60,9 +60,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.TimeZone;
 
-import static com.rebuild.core.support.ConfigurationItem.CacheHost;
-import static com.rebuild.core.support.ConfigurationItem.CachePassword;
-import static com.rebuild.core.support.ConfigurationItem.CachePort;
+import static com.rebuild.core.support.ConfigurationItem.*;
 
 /**
  * 系统安装
@@ -358,9 +356,10 @@ public class Installer implements InstallState {
                     if (rs.next()) return new DbInfo(rs.getString(1));
                 }
             }
-        } catch (SQLException ignored) {
+        } catch (SQLException ex) {
+            log.warn("Cannot get database info", ex);
         }
-        return null;
+        return new DbInfo("MySQL");
     }
 
     /**

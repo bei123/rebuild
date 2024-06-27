@@ -11,6 +11,7 @@ import cn.devezhao.persist4j.Entity;
 import cn.devezhao.persist4j.Field;
 import cn.devezhao.persist4j.Query;
 import cn.devezhao.persist4j.Record;
+import cn.devezhao.persist4j.dialect.FieldType;
 import cn.devezhao.persist4j.engine.ID;
 import com.alibaba.fastjson.JSONObject;
 import com.rebuild.core.Application;
@@ -128,13 +129,24 @@ public class QueryHelper {
     }
 
     /**
-     * 获取明细列表 ID
+     * 获取（默认明细）明细列表 ID
      *
      * @param mainId
      * @return
      */
     public static List<ID> detailIdsNoFilter(ID mainId) {
         Entity detailEntity = MetadataHelper.getEntity(mainId.getEntityCode()).getDetailEntity();
+        return detailIdsNoFilter(mainId, detailEntity);
+    }
+
+    /**
+     * 获取（指定）明细列表 ID
+     *
+     * @param mainId
+     * @param detailEntity
+     * @return
+     */
+    public static List<ID> detailIdsNoFilter(ID mainId, Entity detailEntity) {
         String sql = String.format("select %s from %s where %s = ? order by autoId asc",
                 detailEntity.getPrimaryField().getName(),
                 detailEntity.getName(),
@@ -178,16 +190,18 @@ public class QueryHelper {
     /**
      * @param queryFields
      * @param queryValue
+     * @param forceQueryName
      * @return
      */
-    public static ID queryId(Field[] queryFields, String queryValue) {
+    public static ID queryIdValue(Field[] queryFields, String queryValue, boolean forceQueryName) {
         Entity entity = queryFields[0].getOwnEntity();
 
         StringBuilder sql = new StringBuilder(
                 String.format("select %s from %s where ", entity.getPrimaryField().getName(), entity.getName()));
         for (Field qf : queryFields) {
-            sql.append(
-                    String.format("%s = '%s' or ", qf.getName(), CommonsUtils.escapeSql(queryValue)));
+            String qfName = qf.getName();
+            if (forceQueryName && qf.getType() == FieldType.REFERENCE) qfName = "&" + qfName;
+            sql.append(String.format("%s = '%s' or ", qfName, CommonsUtils.escapeSql(queryValue)));
         }
         sql = new StringBuilder(sql.substring(0, sql.length() - 4));
 
@@ -200,7 +214,7 @@ public class QueryHelper {
      * @param fieldName
      * @return
      */
-    public static Object queryField(ID recordId, String fieldName) {
+    public static Object queryFieldValue(ID recordId, String fieldName) {
         Object[] o = Application.getQueryFactory().uniqueNoFilter(recordId, fieldName);
         return o == null || o[0] == null ? null : o[0];
     }

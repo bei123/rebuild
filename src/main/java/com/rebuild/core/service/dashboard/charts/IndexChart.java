@@ -11,8 +11,6 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.rebuild.utils.JSONUtils;
 
-import java.text.MessageFormat;
-
 /**
  * 指标卡
  *
@@ -27,25 +25,27 @@ public class IndexChart extends ChartData {
 
     @Override
     public JSON build() {
-        Numerical[] nums = getNumericals();
+        final Numerical[] nums = getNumericals();
 
-        Numerical axis = nums[0];
-        Object[] dataRaw = createQuery(buildSql(axis)).unique();
-
+        Numerical num = nums[0];
+        Object[] dataRaw = createQuery(buildSql(num, true)).unique();
         JSONObject index = JSONUtils.toJSONObject(
                 new String[]{"data", "label"},
-                new Object[]{wrapAxisValue(axis, dataRaw[0], true), axis.getLabel()});
+                new Object[]{wrapAxisValue(num, dataRaw[0], true), num.getLabel()});
 
-        return JSONUtils.toJSONObject("index", index);
-    }
+        // 对比
+        if (nums.length > 1) {
+            num = nums[1];
+            dataRaw = createQuery(buildSql(num, true)).unique();
+            index.put("data2", wrapAxisValue(num, dataRaw[0], true));
+            index.put("label2", num.getLabel());
+        }
 
-    private String buildSql(Numerical axis) {
-        String sql = "select {0} from {1} where {2}";
-        String where = getFilterSql();
+        JSONObject renderOption = config.getJSONObject("option");
+        if (renderOption == null) renderOption = new JSONObject();
 
-        sql = MessageFormat.format(sql,
-                axis.getSqlName(),
-                getSourceEntity().getName(), where);
-        return sql;
+        return JSONUtils.toJSONObject(
+                new String[]{"index", "_renderOption"},
+                new Object[]{index, renderOption});
     }
 }

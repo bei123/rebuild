@@ -115,13 +115,12 @@ public enum ConfigurationItem {
     PortalUploadMaxSize(200),
     MobileNavStyle(34),
     PageMourningMode(false),
-    
+
     // !!! 命令行适用
     DataDirectory,                  // 数据目录
     RedisDatabase(0),     // Redis DB
     MobileUrl,                      // 移动端地址
     RbStoreUrl,                     // 在线仓库地址
-    TriggerMaxDepth,                // 触发器最大执行深度
     SecurityEnhanced(false), // 安全增强
     TrustedAllUrl(false), // 可信外部地址
     LibreofficeBin,                 // Libreoffice 命令
@@ -134,13 +133,13 @@ public enum ConfigurationItem {
      *
      * @param name
      * @return
+     * @see CommandArgs
      */
     public static boolean inJvmArgs(String name) {
         return DataDirectory.name().equalsIgnoreCase(name)
                 || RedisDatabase.name().equalsIgnoreCase(name)
                 || MobileUrl.name().equalsIgnoreCase(name)
                 || RbStoreUrl.name().equalsIgnoreCase(name)
-                || TriggerMaxDepth.name().equalsIgnoreCase(name)
                 || SecurityEnhanced.name().equalsIgnoreCase(name)
                 || TrustedAllUrl.name().equalsIgnoreCase(name)
                 || LibreofficeBin.name().equalsIgnoreCase(name)

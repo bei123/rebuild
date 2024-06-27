@@ -28,8 +28,14 @@ const SHARE_SELF = 'SELF'
 class Share2 extends _ChangeHandler {
   constructor(props) {
     super(props)
-    // defaultValue
-    if (props.shareTo && props.shareTo !== SHARE_SELF) this.state.shared = true
+
+    // init
+    if (props.shareTo && props.shareTo !== SHARE_SELF) {
+      this.state.shared = true
+    } else if (rb.isAdminUser && !props.id) {
+      // new for Admin
+      this.state.shared = true
+    }
   }
 
   render() {
@@ -82,7 +88,7 @@ class Share2 extends _ChangeHandler {
       this._Share2Switch.show()
     } else {
       const that = this
-      renderRbcomp(<Share2Switch modalClazz="select-list" list={this.props.list} entity={this.props.entity} id={this.props.id} />, null, function () {
+      renderRbcomp(<Share2Switch modalClazz="select-list" list={this.props.list} entity={this.props.entity} id={this.props.id} />, function () {
         that._Share2Switch = this
       })
     }
@@ -96,7 +102,7 @@ class Share2 extends _ChangeHandler {
       const that = this
       let noName = this.props.noSwitch
       if (this.props.hasName) noName = false
-      renderRbcomp(<Share2Settings configName={this.props.configName} shareTo={this.props.shareTo} call={this.showSettingsCall} id={this.props.id} noName={noName} />, null, function () {
+      renderRbcomp(<Share2Settings configName={this.props.configName} shareTo={this.props.shareTo} call={this.showSettingsCall} id={this.props.id} noName={noName} />, function () {
         that._Share2Settings = this
       })
     }
@@ -113,7 +119,7 @@ class Share2 extends _ChangeHandler {
       if ((this.state.shareTo || '').length >= 20) st = this.state.shareTo
       else st = SHARE_ALL
     }
-    return { configName: this.state.configName, shareTo: st }
+    return { configName: this.state.configName || null, shareTo: st }
   }
 }
 

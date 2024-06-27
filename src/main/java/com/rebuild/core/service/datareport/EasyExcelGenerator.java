@@ -22,6 +22,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.rebuild.core.Application;
 import com.rebuild.core.DefinedException;
+import com.rebuild.core.RebuildException;
 import com.rebuild.core.metadata.EntityHelper;
 import com.rebuild.core.metadata.MetadataHelper;
 import com.rebuild.core.metadata.easymeta.DisplayType;
@@ -31,6 +32,7 @@ import com.rebuild.core.metadata.easymeta.MultiValue;
 import com.rebuild.core.metadata.impl.EasyFieldConfigProps;
 import com.rebuild.core.privileges.UserHelper;
 import com.rebuild.core.service.approval.ApprovalState;
+import com.rebuild.core.service.query.QueryHelper;
 import com.rebuild.core.support.RebuildConfiguration;
 import com.rebuild.core.support.SetUser;
 import com.rebuild.core.support.general.BarCodeSupport;
@@ -340,24 +342,17 @@ public class EasyExcelGenerator extends SetUser {
             }
         }
 
-        for (final String fieldName : varsMap.values()) {
+        for (Map.Entry<String, String> e : varsMap.entrySet()) {
+            final String fieldName = e.getValue();
             if (fieldName == null) continue;
 
-            EasyField easyField = EasyMetaFactory.valueOf(MetadataHelper.getLastJoinField(entity, fieldName));
-            DisplayType dt = easyField.getDisplayType();
-
-            // 替换成变量名
-            String varName = fieldName;
-            for (Map.Entry<String, String> e : varsMap.entrySet()) {
-                if (fieldName.equalsIgnoreCase(e.getValue())) {
-                    varName = e.getKey();
-                    break;
-                }
-            }
-
+            String varName = e.getKey();
             if (varName.startsWith(NROW_PREFIX)) {
                 varName = varName.substring(1);
             }
+
+            EasyField easyField = EasyMetaFactory.valueOf(MetadataHelper.getLastJoinField(entity, fieldName));
+            DisplayType dt = easyField.getDisplayType();
 
             // FIXME v3.2 图片仅支持导出第一张
             if (!dt.isExportable() && dt != DisplayType.IMAGE) {
@@ -385,9 +380,7 @@ public class EasyExcelGenerator extends SetUser {
                         String format = easyField.getExtraAttr(EasyFieldConfigProps.DECIMAL_FORMAT);
                         int scale = StringUtils.isBlank(format) ? 2 : format.split("\\.")[1].length();
                         // Keep Type
-//                        fieldValue = ObjectUtils.round(((BigDecimal) fieldValue).doubleValue(), scale);
                         fieldValue = ((BigDecimal) fieldValue).setScale(scale, RoundingMode.HALF_UP);
-
                     } else {
                         fieldValue = FieldValueHelper.wrapFieldValue(fieldValue, easyField, Boolean.TRUE);
                     }
@@ -419,6 +412,9 @@ public class EasyExcelGenerator extends SetUser {
                             }
                         }
                     }
+
+                    // v3.7.0
+                    fieldValue = ValueConvertFunc.convert(easyField, fieldValue, varName);
                 }
 
                 data.put(varName, fieldValue);
@@ -432,10 +428,17 @@ public class EasyExcelGenerator extends SetUser {
         if (paths == null || paths.isEmpty()) return null;
 
         try {
+            // FIXME 仅取第一个
             for (Object path : paths) {
-                File temp = QiniuCloud.getStorageFile((String) path);
-                File img1000 = new ImageView2(1000).thumbQuietly(temp);
+                File temp;
+                try {
+                    temp = QiniuCloud.getStorageFile((String) path);
+                } catch (RebuildException ex) {
+                    log.warn(ex.getMessage());
+                    continue;
+                }
 
+                File img1000 = new ImageView2(1000).thumbQuietly(temp);
                 byte[] b = FileUtils.readFileToByteArray(img1000);
                 String base64 = Base64.encodeBase64String(b);
                 return buildSignData("base64," + base64);
@@ -482,22 +485,27 @@ public class EasyExcelGenerator extends SetUser {
             return phName.length() > PH__KEEP.length()
                     ? phName.substring(PH__KEEP.length() + 1) : "";
         }
-        // 列表序号
-        if (phName.equals(PH__NUMBER)) {
-            return phNumber;
+
+        switch (phName) {
+            case PH__NUMBER:
+                return phNumber;
+            case PH__CURRENTUSER:
+                return UserHelper.getName(getUser());
+            case PH__CURRENTBIZUNIT:
+                return Objects.requireNonNull(UserHelper.getDepartment(getUser())).getName();
+            case PH__CURRENTDATE:
+                return CalendarUtils.getUTCDateFormat().format(CalendarUtils.now());
+            case PH__CURRENTDATETIME:
+                return CalendarUtils.getUTCDateTimeFormat().format(CalendarUtils.now());
         }
-        if (phName.equals(PH__CURRENTUSER)) {
-            return UserHelper.getName(getUser());
+
+        // v3.7
+        if (phName.startsWith(PH__CURRENTUSER)) {
+            String useField = phName.substring(PH__CURRENTUSER.length() + 1);
+            Object useValue = QueryHelper.queryFieldValue(getUser(), useField);
+            return useValue == null ? null : useValue.toString();
         }
-        if (phName.equals(PH__CURRENTBIZUNIT)) {
-            return Objects.requireNonNull(UserHelper.getDepartment(getUser())).getName();
-        }
-        if (phName.equals(PH__CURRENTDATE)) {
-            return CalendarUtils.getUTCDateFormat().format(CalendarUtils.now());
-        }
-        if (phName.equals(PH__CURRENTDATETIME)) {
-            return CalendarUtils.getUTCDateTimeFormat().format(CalendarUtils.now());
-        }
+
         return null;
     }
 
