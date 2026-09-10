@@ -75,40 +75,11 @@
                   <button class="btn btn-primary btn-xl" type="submit" data-spinner>[[${bundle.L('登录')}]]</button>
                   <div class="mt-4 text-center" th:utext="${bundle.L('还没有账号? [立即注册](signup)')}"></div>
                 </div>
-                <div class="login-with" th:if="${ssoDingtalk != null || ssoWxwork != null || ssoFeishu != null || ssoIdpaas != null}">
-                  <span>[[${bundle.L('第三方登录')}]]</span>
-                  <a href="login/sso?protocol=dingtalk" th:if="${ssoDingtalk != null}" data-toggle="tooltip" th:title="${bundle.L('钉钉')}" data-url-external="desktop">
-                    <img th:src="@{/assets/img/dingtalk256.png}" alt="DingTalk" />
-                  </a>
-                  <a href="login/sso?protocol=wxwork" th:if="${ssoWxwork != null}" data-toggle="tooltip" th:title="${bundle.L('企业微信')}" data-url-external="desktop">
-                    <img th:src="@{/assets/img/wxwork512.png}" alt="WeCom" />
-                  </a>
-                  <a href="login/sso?protocol=feishu" th:if="${ssoFeishu != null}" data-toggle="tooltip" th:title="${bundle.L('飞书')}" data-url-external="desktop">
-                    <img th:src="@{/assets/img/feishu512.png}" alt="Feishu" />
-                  </a>
-                  <a href="login/sso?protocol=idpaas" th:if="${ssoIdpaas != null}" data-toggle="tooltip" th:title="${bundle.L('SSO 登录')}" data-open-external="ignore">
-                    <img th:src="@{/assets/img/icon-sso.png}" alt="SSO" />
-                  </a>
-                </div>
+                
                 <div class="row mt-6 login-meta">
                   <div class="col-8">
-                    <div class="btn-group dropup h5-mobile fs-0">
-                      <a class="dropdown-toggle" data-toggle="dropdown" th:href="${mobileUrl}" data-url-external="ignore">
-                        <i class="icon zmdi zmdi-smartphone-iphone"></i>
-                        <span class="up-1">[[${bundle.L('手机版')}]]</span>
-                      </a>
-                      <div class="dropdown-menu shadow-lg">
-                        <div>
-                          <img class="w-100" alt="Mobile QR" />
-                        </div>
-                      </div>
-                    </div>
-                    <div class="btn-group dropup h5-mobile pwa fs-0 ml-2">
-                      <a th:href="${desktopAppUrl}">
-                        <i class="icon mdi mdi-monitor-arrow-down fs-14"></i>
-                        <span class="up-1">[[${bundle.L('放在桌面')}]]</span>
-                      </a>
-                    </div>
+                    
+                    
                   </div>
                   <div class="col-4 text-right pl-0">
                     <div class="btn-group">
@@ -125,12 +96,7 @@
               </form>
             </div>
           </div>
-          <div class="splash-footer">
-            <div class="copyright link">
-              &copy;
-              <th:block th:utext="${commercial >= 11 ? appName : bundle.L('[REBUILD](https://getrebuild.com/) 技术支持')}" />
-            </div>
-          </div>
+          
         </div>
       </div>
     </div>
