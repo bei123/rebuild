@@ -63,7 +63,7 @@
           }
 
           $btn.button('loading')
-          $.post('admin-verify?passwd=******', $saltText(passwd), (res) => {
+          $.post('/user/admin-verify?passwd=******', $saltText(passwd), (res) => {
             if (res.error_code === 0) {
               location.replace(nexturl)
             } else {

@@ -59,7 +59,7 @@ $(document).ready(() => {
   })
 
   $('.vcode-row img').on('click', function () {
-    $(this).attr('src', `captcha?${$random()}`)
+    $(this).attr('src', `${rb.baseUrl}/user/captcha?${$random()}`)
   })
 
   // 密码显示/隐藏
