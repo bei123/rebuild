@@ -54,7 +54,11 @@
     <script th:src="@{/assets/lib/sha256.min.js}"></script>
     <script type="text/babel">
       $(document).ready(() => {
-        const nexturl = $decode($urlp('nexturl') || '../admin/systems')
+        let nexturl = $decode($urlp('nexturl') || '/admin/systems')
+        // 相对路径在 /admin/* 下会解析成 /admin/admin/...，统一成绝对路径
+        if (nexturl.startsWith('../')) nexturl = nexturl.replace(/^\.\.\//, '/')
+        else if (!nexturl.startsWith('/') && !/^[a-z]+:\/\//i.test(nexturl)) nexturl = '/' + nexturl
+        nexturl = nexturl.replace(/^\/admin\/admin\//, '/admin/')
         const $btn = $('.J_verify-btn').on('click', () => {
           const passwd = $val('#admin-passwd')
           if (!passwd) {
