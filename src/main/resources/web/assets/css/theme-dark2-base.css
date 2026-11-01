@@ -16,6 +16,21 @@ html.theme-dark2 {
   --rb-dark-link: #4493f8;
 }
 
+/* SIZE */
+
+.alert .icon {
+  font-size: 24px;
+}
+
+.alert .message {
+  padding: 18px 42px;
+  padding-left: 0;
+}
+
+.alert .close {
+  padding: 18px 0;
+}
+
 /* Base */
 
 html.theme-dark2 body {
@@ -47,7 +62,8 @@ html.theme-dark2 samp {
   color: var(--rb-dark-text);
 }
 
-html.theme-dark2 pre {
+html.theme-dark2 pre,
+html.theme-dark2 pre code {
   background-color: var(--rb-dark-panel);
   border-color: var(--rb-dark-border);
   color: var(--rb-dark-text);
@@ -274,70 +290,71 @@ html.theme-dark2 .dropdown-menu .dropdown-divider {
   border-color: var(--rb-dark-border);
 }
 
-html.theme-dark2 .btn-secondary {
+html.theme-dark2 .btn.btn-secondary {
   background-color: var(--rb-dark-panel);
   border-color: var(--rb-dark-border);
   color: var(--rb-dark-muted);
 }
 
-html.theme-dark2 .btn-secondary:hover {
+html.theme-dark2 .btn.btn-secondary:hover {
   background-color: rgba(255, 255, 255, 0.08);
   color: var(--rb-dark-text);
 }
 
-html.theme-dark2 .btn-secondary:focus,
-html.theme-dark2 .btn-secondary.active,
-html.theme-dark2 .btn-secondary:active,
-html.theme-dark2 .btn-secondary:not([disabled]):not(.disabled).active,
-html.theme-dark2 .btn-secondary:not([disabled]):not(.disabled):active,
-html.theme-dark2 .show > .btn-secondary.dropdown-toggle {
+html.theme-dark2 .btn.btn-secondary:focus,
+html.theme-dark2 .btn.btn-secondary.active,
+html.theme-dark2 .btn.btn-secondary:active,
+html.theme-dark2 .btn.btn-secondary:not([disabled]):not(.disabled).active,
+html.theme-dark2 .btn.btn-secondary:not([disabled]):not(.disabled):active,
+html.theme-dark2 .show > .btn.btn-secondary.dropdown-toggle {
   background-color: rgba(255, 255, 255, 0.12);
   border-color: var(--rb-dark-border);
   color: var(--rb-dark-text);
 }
 
-html.theme-dark2 .btn-light {
+html.theme-dark2 .btn.btn-light {
   background-color: var(--rb-dark-panel);
   border-color: var(--rb-dark-border);
   color: var(--rb-dark-text);
 }
 
-html.theme-dark2 .btn-light:hover,
-html.theme-dark2 .btn-light:focus,
-html.theme-dark2 .btn-light:not([disabled]):not(.disabled).active,
-html.theme-dark2 .btn-light:not([disabled]):not(.disabled):active,
-html.theme-dark2 .show > .btn-light.dropdown-toggle {
+html.theme-dark2 .btn.btn-light:hover,
+html.theme-dark2 .btn.btn-light:focus,
+html.theme-dark2 .btn.btn-light:not([disabled]):not(.disabled).active,
+html.theme-dark2 .btn.btn-light:not([disabled]):not(.disabled):active,
+html.theme-dark2 .show > .btn.btn-light.dropdown-toggle {
+  background-color: rgba(255, 255, 255, 0.12);
+  border-color: var(--rb-dark-border);
+  border-bottom-color: var(--rb-dark-border);
+  color: var(--rb-dark-text);
+}
+
+html.theme-dark2 .btn.btn-outline-secondary,
+html.theme-dark2 .btn.btn-outline-light {
+  border-color: var(--rb-dark-border);
+  color: var(--rb-dark-text);
+}
+
+html.theme-dark2 .btn.btn-outline-secondary:hover,
+html.theme-dark2 .btn.btn-outline-secondary:focus,
+html.theme-dark2 .btn.btn-outline-secondary:not([disabled]):not(.disabled).active,
+html.theme-dark2 .btn.btn-outline-secondary:not([disabled]):not(.disabled):active,
+html.theme-dark2 .btn.btn-outline-light:hover,
+html.theme-dark2 .btn.btn-outline-light:focus,
+html.theme-dark2 .btn.btn-outline-light:not([disabled]):not(.disabled).active,
+html.theme-dark2 .btn.btn-outline-light:not([disabled]):not(.disabled):active {
   background-color: rgba(255, 255, 255, 0.12);
   border-color: var(--rb-dark-border);
   color: var(--rb-dark-text);
 }
 
-html.theme-dark2 .btn-outline-secondary,
-html.theme-dark2 .btn-outline-light {
-  border-color: var(--rb-dark-border);
-  color: var(--rb-dark-text);
+html.theme-dark2 .btn.btn-link {
+  color: var(--rb-dark-link) !important;
 }
 
-html.theme-dark2 .btn-outline-secondary:hover,
-html.theme-dark2 .btn-outline-secondary:focus,
-html.theme-dark2 .btn-outline-secondary:not([disabled]):not(.disabled).active,
-html.theme-dark2 .btn-outline-secondary:not([disabled]):not(.disabled):active,
-html.theme-dark2 .btn-outline-light:hover,
-html.theme-dark2 .btn-outline-light:focus,
-html.theme-dark2 .btn-outline-light:not([disabled]):not(.disabled).active,
-html.theme-dark2 .btn-outline-light:not([disabled]):not(.disabled):active {
-  background-color: rgba(255, 255, 255, 0.12);
-  border-color: var(--rb-dark-border);
-  color: var(--rb-dark-text);
-}
-
-html.theme-dark2 .btn-link {
-  color: var(--rb-dark-link);
-}
-
-html.theme-dark2 .btn-link:hover,
-html.theme-dark2 .btn-link:focus {
-  color: #539bf5;
+html.theme-dark2 .btn.btn-link:hover,
+html.theme-dark2 .btn.btn-link:focus {
+  color: #539bf5 !important;
 }
 
 html.theme-dark2 .table {
@@ -494,26 +511,26 @@ html.theme-dark2 .alert-secondary {
 }
 
 html.theme-dark2 .alert-info {
-  background-color: rgba(56, 139, 253, 0.15);
-  border-color: rgba(56, 139, 253, 0.4);
+  background-color: rgba(56, 139, 253, 0.5);
+  border-color: rgba(56, 139, 253, 0.6);
   color: #79c0ff;
 }
 
 html.theme-dark2 .alert-success {
-  background-color: rgba(63, 185, 80, 0.15);
-  border-color: rgba(63, 185, 80, 0.4);
+  background-color: rgba(63, 185, 80, 0.5);
+  border-color: rgba(63, 185, 80, 0.6);
   color: #7ee787;
 }
 
 html.theme-dark2 .alert-warning {
-  background-color: rgba(187, 128, 9, 0.15);
-  border-color: rgba(187, 128, 9, 0.4);
+  background-color: rgba(187, 128, 9, 0.5);
+  border-color: rgba(187, 128, 9, 0.6);
   color: #e3b341;
 }
 
 html.theme-dark2 .alert-danger {
-  background-color: rgba(248, 81, 73, 0.15);
-  border-color: rgba(248, 81, 73, 0.4);
+  background-color: rgba(248, 81, 73, 0.5);
+  border-color: rgba(248, 81, 73, 0.6);
   color: #ff7b72;
 }
 
@@ -620,6 +637,15 @@ html.theme-dark2 .ps-scrollbar-x-rail .ps-scrollbar-x {
   background-color: rgba(255, 255, 255, 0.3);
 }
 
+html.theme-dark2 .os-theme-rb {
+  --os-track-bg: rgba(255, 255, 255, 0.12);
+  --os-track-bg-hover: rgba(255, 255, 255, 0.12);
+  --os-track-bg-active: rgba(255, 255, 255, 0.12);
+  --os-handle-bg: rgba(255, 255, 255, 0.3);
+  --os-handle-bg-hover: rgba(255, 255, 255, 0.45);
+  --os-handle-bg-active: rgba(255, 255, 255, 0.5);
+}
+
 /* DataList (dataTables_wrapper) */
 
 html.theme-dark2 .data-list {
@@ -691,8 +717,6 @@ html.theme-dark2 th.column-fixed::before,
 html.theme-dark2 .table.table-header-fixed thead > tr > th::before {
   border-bottom-color: var(--rb-dark-border);
 }
-
-/* 固定列条纹/hover/选中态取 panel 叠加对应白百分比的不透明等效值 */
 
 html.theme-dark2 .table-striped tbody tr:nth-of-type(odd) td.column-fixed {
   background-color: #1e242c;

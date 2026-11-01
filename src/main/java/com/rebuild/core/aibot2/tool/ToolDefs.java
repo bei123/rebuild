@@ -12,8 +12,10 @@ import cn.devezhao.persist4j.engine.ID;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.openai.models.chat.completions.ChatCompletionTool;
+import com.rebuild.core.Application;
 import com.rebuild.core.DefinedException;
 import com.rebuild.core.UserContextHolder;
+import com.rebuild.core.aibot2.AiSourceHolder;
 import com.rebuild.core.aibot2.AibotAgent;
 import com.rebuild.core.aibot2.ChatLogger;
 import com.rebuild.core.privileges.AdminGuard;
@@ -33,6 +35,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import static com.rebuild.core.aibot2.tool.ToolHelper.compactJson;
@@ -44,7 +47,10 @@ import static com.rebuild.core.aibot2.tool.ToolHelper.compactJson;
 @Slf4j
 public class ToolDefs {
 
+    private static final Map<String, JSONObject> TOOL_JSON_CACHE = new ConcurrentHashMap<>();
+
     private static final Map<String, Tool> TOOL_MAP = new LinkedHashMap<>();
+
     static {
         register(new ListEntities());
         register(new FetchUrl());
@@ -55,6 +61,7 @@ public class ToolDefs {
         register(new GetRecord());
         register(new StatisticsData());
         register(new UpsertRecord());
+        register(new QueryClassification());
         register(new CreateFeed());
         register(new CreateProjectTask());
         register(new ExportReport());
@@ -76,6 +83,7 @@ public class ToolDefs {
         register(new BuildListLayout());
         register(new BuildNavMenu());
         register(new BuildApp());
+        register(new BuildFrontJsCode());
     }
 
     /**
@@ -98,7 +106,7 @@ public class ToolDefs {
 
     /**
      * 获取可用工具
-     * 
+     *
      * @param agent
      * @return
      */
@@ -166,28 +174,62 @@ public class ToolDefs {
         List<JSONObject> tools = new ArrayList<>();
         for (String toolName : TOOL_MAP.keySet()) {
             Tool toolImpl = TOOL_MAP.get(toolName);
-            // 系统工具仅供 AI 使用，不对用户展示
             if (toolImpl.isSystem()) continue;
-            // 禁用工具仅在 includeDisabled 时返回（供管理页展示/重新启用）
             if (disabled.contains(toolName) && !includeDisabled) continue;
 
-            String d = CommonsUtils.getStringOfRes("aibot2/tool/" + toolName + ".json");
-            if (d == null) continue;
+            JSONObject toolJson = getToolJson(toolName);
+            if (toolJson == null) continue;
+            JSONObject funcJson = toolJson.getJSONObject("function");
 
-            JSONObject json = JSONObject.parseObject(d);
-            JSONObject funcJson = json.getJSONObject("function");
+            JSONObject d = new JSONObject(true);
+            d.put("name", funcJson.getString("name"));
+            d.put("description", funcJson.getString("description"));
+            d.put("userDescription", toolJson.getString("userDescription"));
 
-            JSONObject tool = new JSONObject(true);
-            tool.put("name", funcJson.getString("name"));
-            tool.put("description", funcJson.getString("description"));
-            // 用户描述独立于模型描述，未配置时回退到模型描述
-            String userDescription = json.getString("userDescription");
-            if (StringUtils.isNotBlank(userDescription)) tool.put("userDescription", userDescription);
-            if (includeDisabled) tool.put("disabled", disabled.contains(toolName));
-            if (includeSchema) tool.put("inputSchema", funcJson.getJSONObject("parameters"));
-            tools.add(tool);
+            if (includeDisabled) d.put("disabled", disabled.contains(toolName));
+            if (includeSchema) d.put("inputSchema", funcJson.getJSONObject("parameters"));
+            tools.add(d);
         }
         return tools;
+    }
+
+    /**
+     * 获取并缓存工具定义 JSON
+     *
+     * @param toolName
+     * @return
+     */
+    static JSONObject getToolJson(String toolName) {
+        if (!Application.devMode()) {
+            JSONObject c = TOOL_JSON_CACHE.get(toolName);
+            if (c != null) return JSON.parseObject(c.toJSONString());
+        }
+
+        String d = CommonsUtils.getStringOfRes("aibot2/tool/" + toolName + ".json");
+        return d == null ? null : JSONObject.parseObject(d);
+    }
+
+    // 工具执行进度提示的兜底文案
+    private static final String TOOL_HINT_DEFAULT = "正在处理...";
+
+    /**
+     * 工具执行中的用户可见提示。取 userDescription 首句，
+     * 系统工具与描述缺失时回退兜底文案，避免内部工具名外泄到用户对话。
+     *
+     * @param toolName
+     * @return
+     */
+    public static String userHint(String toolName) {
+        Tool tool = TOOL_MAP.get(toolName);
+        if (tool == null || tool.isSystem()) return TOOL_HINT_DEFAULT;
+
+        JSONObject json = getToolJson(toolName);
+        String desc = json == null ? null : json.getString("userDescription");
+        if (StringUtils.isBlank(desc)) return TOOL_HINT_DEFAULT;
+
+        desc = StringUtils.substringBefore(desc, "。").trim();
+        if (desc.length() > 24) desc = CommonsUtils.maxstr(desc, 24) + "...";
+        return StringUtils.defaultIfBlank(desc, TOOL_HINT_DEFAULT);
     }
 
     /**
@@ -221,64 +263,67 @@ public class ToolDefs {
      */
     public static String execute(String toolName, String arguments, ChatLogger chatLogger) {
         ID user = UserContextHolder.getUser();
-
-        Tool tool = TOOL_MAP.get(toolName);
-        if (tool == null) {
-            log.warn("Tool not found : {}", toolName);
-            throw new KnownToolException("Tool not found: " + toolName);
-        }
-
-        if (isToolDisabled(toolName)) {
-            log.warn("Tool disabled : {}", toolName);
-            throw new KnownToolException("Tool disabled: " + toolName);
-        }
-
-        // 管理员专属工具验证权限
-        if (tool instanceof AdminGuard && !UserHelper.isAdmin(user)) {
-            log.warn("Tool requires admin : {} by {}", toolName, user);
-            throw new KnownToolException("此操作仅限管理员使用");
-        }
-
-        if (StringUtils.isBlank(arguments)) arguments = "{}";
-
-        // TOOL_CALL 由 execute 统一记录，避免 executeSafely 重复打印
-        log.info("TOOL_CALL {}\n{}", toolName, compactJson(arguments));
-        if (chatLogger != null) chatLogger.log("TOOL_CALL " + toolName, arguments);
+        ID restoreAiSource = AiSourceHolder.set(chatLogger != null ? chatLogger.getChatid() : null);
 
         try {
-            Object res = tool.tool(arguments);
-            String toolRes = res instanceof String ? (String) res : JSON.toJSONString(res);
-            log.info("TOOL_RESULT {}\n{}", toolName, compactJson(toolRes));
-            if (chatLogger != null) chatLogger.log("TOOL_RESULT " + toolName, toolRes);
-
-            // 创建记录/配置时，查询实际存储的记录数据并记录到日志
-            if (chatLogger != null) {
-                try {
-                    JSONObject resultJson = JSON.parseObject(toolRes);
-                    if ("ok".equals(resultJson.getString("status"))) {
-                        String recordIdStr = resultJson.getString("id");
-                        if (ID.isId(recordIdStr)) {
-                            Record record = QueryHelper.recordNoFilter(ID.valueOf(recordIdStr));
-                            chatLogger.log("TOOL_RECORD " + toolName, JSON.toJSONString(record));
-                        }
-                    }
-                } catch (Exception ignored) {
-                    // 查询失败不影响正常流程
-                }
+            Tool tool = TOOL_MAP.get(toolName);
+            if (tool == null) {
+                log.warn("Tool not found : {}", toolName);
+                throw new KnownToolException("Tool not found: " + toolName);
             }
-            return toolRes;
 
-        } catch (KnownToolException ex) {
-            // 已知业务异常（如参数校验失败、实体不存在），仅记录消息不输出堆栈
-            log.warn("TOOL_WARN {}\n{}", toolName, ex.getMessage());
-            throw ex;
-        } catch (ToolException ex) {
-            log.error("TOOL_ERROR {}\n{}", toolName, ex.getMessage(), ex);
-            throw ex;
-        } catch (Exception ex) {
-            String error = CommonsUtils.getRootMessage(ex);
-            log.error("TOOL_ERROR {}\n{}", toolName, error, ex);
-            throw new ToolException(error, ex);
+            if (isToolDisabled(toolName)) {
+                log.warn("Tool disabled : {}", toolName);
+                throw new KnownToolException("Tool disabled: " + toolName);
+            }
+
+            if (tool instanceof AdminGuard && !UserHelper.isAdmin(user)) {
+                log.warn("Tool requires admin : {} by {}", toolName, user);
+                throw new KnownToolException("此操作仅限管理员使用");
+            }
+
+            if (StringUtils.isBlank(arguments)) arguments = "{}";
+
+            log.info("TOOL_CALL {}\n{}", toolName, compactJson(arguments));
+            if (chatLogger != null) chatLogger.log("TOOL_CALL " + toolName, arguments);
+
+            try {
+                Object res = tool.tool(arguments);
+                String toolRes = res instanceof String ? (String) res : JSON.toJSONString(res);
+                log.info("TOOL_RESULT {}\n{}", toolName, compactJson(toolRes));
+                if (chatLogger != null) chatLogger.log("TOOL_RESULT " + toolName, toolRes);
+
+                if (chatLogger != null) {
+                    try {
+                        JSONObject resultJson = JSON.parseObject(toolRes);
+                        if ("ok".equals(resultJson.getString("status"))) {
+                            String recordIdStr = resultJson.getString("id");
+                            if (ID.isId(recordIdStr)) {
+                                Record record = QueryHelper.recordNoFilter(ID.valueOf(recordIdStr));
+                                chatLogger.log("TOOL_RECORD " + toolName, JSON.toJSONString(record));
+                            }
+                        }
+                    } catch (Exception ignored) {
+                        // 查询失败不影响正常流程
+                    }
+                }
+                return toolRes;
+
+            } catch (KnownToolException ex) {
+                // 已知业务异常（如参数校验失败、实体不存在），仅记录消息不输出堆栈
+                log.warn("TOOL_WARN {}\n{}", toolName, ex.getMessage());
+                throw ex;
+            } catch (ToolException ex) {
+                log.error("TOOL_ERROR {}\n{}", toolName, ex.getMessage(), ex);
+                throw ex;
+            } catch (Exception ex) {
+                String error = CommonsUtils.getRootMessage(ex);
+                log.error("TOOL_ERROR {}\n{}", toolName, error, ex);
+                throw new ToolException(error, ex);
+            }
+
+        } finally {
+            AiSourceHolder.clear(restoreAiSource);
         }
     }
 

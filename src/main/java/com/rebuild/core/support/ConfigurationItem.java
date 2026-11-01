@@ -136,16 +136,14 @@ public enum ConfigurationItem {
     AibotWelcome,
     AibotToolsDisabled,
     AibotTemperature,
-    AibotMaxTokens,
     AibotTopP,
-    AibotSeed,
 
     // PORTALs
     PortalBaiduMapAk,
     PortalUploadMaxSize(200),
     MobileNavStyle(34),
 
-    LoginBulletinBoard("# _REBUILD_\n### 零代码、开源免费的企业管理系统"),
+    LoginBulletinBoard("# _REBUILD_\n### AI 驱动的智能业务平台"),
 
     /**
      * @see com.rebuild.web.admin.ProtectedAdmin

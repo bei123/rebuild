@@ -90,17 +90,17 @@ public class AdminCli4 {
             case C_HELP:
             case "？":
             case "?" : {
-                result = " Usage : " +
-                        " \ncache [clean|get] [KEY]" +
-                        " \nsyscfg NAME [VALUE]" +
-                        " \nsyscfg clean-qiniu|clean-sms|clean-email|clean-wxwork|clean-dingtalk|clean-feishu|clean-aibot" +
-                        " \nbackup [database|datafile|conf[a,b]]" +
-                        " \naes [decrypt] VALUE" +
-                        " \nclean-approval ENTITY" +
-                        " \nadd-testentity" +
-                        " \nchk-schemas" +
-                        " \nfix-entity ENTITY[.FIELD] [DATETIME40|UPLOADNUMBER41|ADDSEQ42]" +
-                        " \nfix-index [ENTITY]";
+                result = "Usage : " +
+                        "\ncache [clean|get] [KEY]" +
+                        "\nsyscfg NAME [VALUE]" +
+                        "\nsyscfg clean-qiniu|clean-sms|clean-email|clean-wxwork|clean-dingtalk|clean-feishu|clean-aibot" +
+                        "\nbackup [database|datafile|conf[a,b]]" +
+                        "\naes [decrypt] VALUE" +
+                        "\nclean-approval ENTITY" +
+                        "\nadd-testentity" +
+                        "\nchk-schemas" +
+                        "\nfix-entity ENTITY[.FIELD] [DATETIME40|UPLOADNUMBER41|ADDSEQ42|TEXT45]" +
+                        "\nfix-index [ENTITY]";
                 break;
             }
             case C_CACHE: {
@@ -362,6 +362,11 @@ public class AdminCli4 {
             boolean s = new Field2SchemaFixer().addSeqField(entity);
             return s ? "OK" : "WRAN: Cannot";
         }
+        if ("TEXT45".equalsIgnoreCase(commands[2])) {
+            if (field == null) return "WRAN: FIELD cannot be null";
+            boolean s = new Field2SchemaFixer().changeColumn2Text(field);
+            return s ? "OK" : "WRAN: Cannot";
+        }
         return "OK";
     }
 
@@ -393,9 +398,8 @@ public class AdminCli4 {
                 if (!MetadataHelper.isBusinessEntity(e)) continue;
                 if (e.containsField(EntityHelper._CreatedDept)) continue;
 
-                new Field2SchemaFixer().addCreatedDeptField(e, false);
+                new Field2SchemaFixer().addCreatedDeptField(e);
             }
-            MetadataHelper.getMetadataFactory().refresh();
 
             return "OK";
         } catch (Exception ex) {

@@ -454,6 +454,7 @@ class RbAlertFree43 extends RbAlert {
   }
 
   static create(message) {
+    if (!message) message = $L('免费版不支持此功能 [(查看详情)](https://getrebuild.com/docs/rbv-features)')
     if (typeof message === 'string') message = WrapHtml(message)
     renderRbcomp(<RbAlertFree43 message={message} width="480" />)
   }
@@ -619,6 +620,50 @@ function RbSpinner({ fully }) {
 // ~~ 无值
 function NoValue({ text }) {
   return <span className="text-muted">{text || $L('无')}</span>
+}
+
+// ~~ 自定义滚动条容器
+class RbScroller extends React.Component {
+  componentDidMount() {
+    const props = this.props
+    this._osInstance = window.OverlayScrollbarsGlobal.OverlayScrollbars(
+      {
+        target: this._$host,
+        elements: { viewport: this._$viewport, content: this._$viewport },
+      },
+      Object.assign({ scrollbars: { theme: 'os-theme-rb', clickScroll: 'instant', autoHide: 'leave' } }, props.options),
+      props.events,
+    )
+  }
+
+  componentWillUnmount() {
+    this._osInstance && this._osInstance.destroy()
+    this._osInstance = null
+  }
+
+  osInstance() {
+    return this._osInstance
+  }
+
+  viewport() {
+    return this._osInstance ? this._osInstance.elements().viewport : this._$viewport
+  }
+
+  update(force) {
+    this._osInstance && this._osInstance.update(force)
+  }
+
+  render() {
+    const props = this.props
+    return (
+      <div className={props.className} style={props.style} data-overlayscrollbars-initialize ref={(c) => (this._$host = c)}>
+        <div data-overlayscrollbars-contents ref={(c) => (this._$viewport = c)}>
+          {props.children}
+        </div>
+        {props.overlay}
+      </div>
+    )
+  }
 }
 
 // ~~ 用户选择器
@@ -1169,7 +1214,9 @@ class AnyRecordSelector extends RecordSelector {
   componentDidMount() {
     super.componentDidMount()
 
-    $.get(`/commons/metadata/entities?detail=true&bizz=${this.props.allowBizz || false}`, (res) => {
+    let url = `/commons/metadata/entities?detail=${this.props.allowDetail !== false ? true : false}&bizz=${this.props.allowBizz || false}`
+    if (this.props.onlyApproval) url += '&approval=true'
+    $.get(url, (res) => {
       let entities = res.data || []
       if (this.props.allowEntities && this.props.allowEntities.length > 0) {
         entities = entities.filter((item) => this.props.allowEntities.includes(item.name))
@@ -1397,8 +1444,10 @@ class Md2Html extends React.Component {
         .find('a')
         .each(function () {
           const $a = $(this)
+          const href = $a.attr('href') || ''
+          if (!/^https?:\/\//i.test(href)) return
           $a.attr({
-            href: `${rb.baseUrl}/commons/url-safe?url=${encodeURIComponent($a.attr('href'))}`,
+            href: `${rb.baseUrl}/commons/url-safe?url=${encodeURIComponent(href)}`,
             target: '_blank',
           }).on('click', (e) => {
             $stopEvent(e, false)
@@ -1528,15 +1577,7 @@ class CodeViewport extends React.Component {
     return (
       <div className="code-viewport">
         <pre ref={(c) => (this._$code = c)}>LOADING</pre>
-        <a
-          className="copy"
-          title={$L('复制')}
-          ref={(c) => (this._$copy = c)}
-          onClick={() => {
-            $clipboard($(this._$code).text())
-            $(this._$copy).addClass('copied-check')
-            setTimeout(() => $(this._$copy).removeClass('copied-check'), 1500)
-          }}>
+        <a className="copy" title={$L('复制')} onClick={(e) => $clipboard2(e.currentTarget, $(this._$code).text())}>
           <i className="icon mdi mdi-content-copy" />
         </a>
       </div>

@@ -137,6 +137,7 @@ module.exports = {
     $formatCode: true,
     CodeViewport: true,
     $clipboard: true,
+    $clipboard2: true,
     $getScript: true,
     $sec2Time: true,
     $removeHtml: true,
@@ -184,5 +185,6 @@ module.exports = {
     $useSignPad: true,
     AiCreateButton: true,
     AiBot: true,
+    RbScroller: true,
   },
 }

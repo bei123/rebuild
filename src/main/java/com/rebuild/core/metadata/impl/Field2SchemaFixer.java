@@ -90,7 +90,6 @@ public class Field2SchemaFixer extends Field2Schema {
         Application.getCommonsService().update(fieldMeta, false);
 
         // 类型生效
-        DynamicMetadataContextHolder.setSkipLanguageRefresh();
         MetadataHelper.getMetadataFactory().refresh();
         field = MetadataHelper.getField(field.getOwnEntity().getName(), field.getName());
 
@@ -135,7 +134,6 @@ public class Field2SchemaFixer extends Field2Schema {
 
         } finally {
             MetadataHelper.getMetadataFactory().refresh();
-            DynamicMetadataContextHolder.isSkipLanguageRefresh(true);
         }
 
         return true;
@@ -148,7 +146,7 @@ public class Field2SchemaFixer extends Field2Schema {
     public boolean fixDatetime40(Field field) {
         if (field.getType() != FieldType.TIMESTAMP) return false;
 
-        changeColumnType(field);
+        changeColumn2Text(field);
         return true;
     }
 
@@ -161,7 +159,7 @@ public class Field2SchemaFixer extends Field2Schema {
         if (em.getMetaId() == null) return false;
         if (!(em.getDisplayType() == DisplayType.FILE || em.getDisplayType() == DisplayType.IMAGE)) return false;
 
-        changeColumnType(field);
+        changeColumn2Text(field);
 
         JSONObject attrs = em.getExtraAttrs();
         attrs.put("uploadNumber", "0,99");
@@ -192,19 +190,16 @@ public class Field2SchemaFixer extends Field2Schema {
 
     /**
      * @param entity
-     * @param refreshMeta
      * @return
      */
-    public boolean addCreatedDeptField(Entity entity, boolean refreshMeta) {
+    public boolean addCreatedDeptField(Entity entity) {
         if (entity.containsField(EntityHelper._CreatedDept)) return false;
 
         Field cdField = createUnsafeField(entity, EntityHelper._CreatedDept, "创建部门", DisplayType.REFERENCE,
                 false, false, false, true, true, null, "Department", null, null, null);
         schema2Database(entity, new Field[]{cdField});
 
-        if (refreshMeta) {
-            MetadataHelper.getMetadataFactory().refresh();
-        }
+        MetadataHelper.getMetadataFactory().refresh();
         return true;
     }
 
@@ -214,7 +209,7 @@ public class Field2SchemaFixer extends Field2Schema {
      * @param field
      * @return
      */
-    protected boolean changeColumnType(Field field) {
+    public boolean changeColumn2Text(Field field) {
         Dialect dialect = Application.getPersistManagerFactory().getDialect();
         final Table table = new Table40(field.getOwnEntity(), dialect);
         StringBuilder ddl = new StringBuilder();

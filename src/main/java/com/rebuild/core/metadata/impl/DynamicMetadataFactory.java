@@ -18,6 +18,7 @@ import com.rebuild.core.Application;
 import com.rebuild.core.metadata.EntityHelper;
 import com.rebuild.core.metadata.easymeta.DisplayType;
 import com.rebuild.core.support.distributed.UseDistributed;
+import com.rebuild.utils.Debouncer;
 import com.rebuild.utils.JSONUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
@@ -38,26 +39,49 @@ import static com.rebuild.core.metadata.MetadataHelper.SPLITER_RE;
 public class DynamicMetadataFactory extends ConfigurationMetadataFactory implements UseDistributed {
     private static final long serialVersionUID = -5709281079615412347L;
 
-    @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
+    private final Debouncer refreshDebouncer = new Debouncer(() -> doRefresh(false), 500);
+
     public DynamicMetadataFactory(String configLocation, Dialect dialect) {
         super(configLocation, dialect);
     }
 
     @Override
-    public Object refresh() {
-        refresh(false);
-        this.datasChanged();
-        return getEntities().length;
+    public void refresh() {
+        this.refresh(false);
     }
 
     @Override
-    synchronized
     public void refresh(boolean initState) {
+        if (initState) {
+            doRefresh(true);
+            return;
+        }
+
+        // 须在实例锁外调用，避免与防抖任务的执行形成死锁
+        refreshDebouncer.cancel();
+
+        doRefresh(false);
+    }
+
+    /**
+     * 防抖异步刷新（不适用于立即返回的场景）
+     */
+    public void refreshAsync() {
+        refreshDebouncer.run();
+    }
+
+    /**
+     * @param initState
+     */
+    private synchronized void doRefresh(boolean initState) {
+        log.info("Loading {} entities ...", initState ? "system" : "customized/business");
         super.refresh(initState);
 
-        if (!initState && !DynamicMetadataContextHolder.isSkipLanguageRefresh(false)) {
+        if (!initState) {
             Application.getLanguage().refresh();
         }
+
+        this.notifyRefresh();
     }
 
     @Override
