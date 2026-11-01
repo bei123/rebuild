@@ -187,6 +187,46 @@ class RbModal extends React.Component {
   }
 }
 
+// ~~ 渐变横幅弹窗
+class RbHeroModal extends RbModal {
+  render() {
+    const props = this.props
+    return (
+      <div
+        className="modal fade rbmodal rbheromodal"
+        aria-modal="true"
+        tabIndex="-1"
+        ref={(c) => {
+          this._rbmodal = c
+          this._element = c
+        }}>
+        <div className="modal-dialog modal-dialog-centered" style={{ maxWidth: ~~(props.width || 551) }}>
+          <div className="modal-content">
+            <div className="rbheromodal-hero">
+              <span className="rbheromodal-close" onClick={() => this.hide()} title={`${$L('关闭')} (Esc)`}>
+                <i className="zmdi zmdi-close" />
+              </span>
+              {props.icon && <div className="rbheromodal-icon">{props.icon}</div>}
+              <h3>{props.title || ''}</h3>
+              {props.subtitle && <p>{props.subtitle}</p>}
+            </div>
+            <div className="rbheromodal-card">{props.children}</div>
+            {props.footer && <div className="rbheromodal-footer">{props.footer}</div>}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // -- Usage
+  /**
+   * @param {*} props { icon, title, subtitle, width, footer, children }
+   */
+  static show(props) {
+    renderRbcomp(<RbHeroModal {...props} disposeOnHide />)
+  }
+}
+
 // ~~ Modal 处理器
 class RbModalHandler extends React.Component {
   constructor(props) {
@@ -436,17 +476,18 @@ class RbAlert extends React.Component {
 // Free Tips
 class RbAlertFree43 extends RbAlert {
   renderContent() {
+    const props = this.props
     return (
       <div className="text-center p-2">
         <div>
           <h4 className="m-0 mb-2 text-bold" style={{ fontSize: '1.538rem', marginTop: -5 }}>
-            {$L('升级后使用')}
+            {props.title || $L('升级后使用')}
           </h4>
-          <div>{this.props.message}</div>
+          <div>{props.message}</div>
         </div>
         <div className="mt-4 mb-1">
-          <a className="btn btn-dark btn-pill btn-lg w-100" target="_blank" href="https://getrebuild.com/market/go/buy-26a">
-            {$L('立即升级')}
+          <a className="btn btn-dark btn-pill btn-lg w-100" target="_blank" href={props.btnLink || 'https://getrebuild.com/market/go/buy-26a'}>
+            {props.btnText || $L('立即升级')}
           </a>
         </div>
       </div>
@@ -457,6 +498,14 @@ class RbAlertFree43 extends RbAlert {
     if (!message) message = $L('免费版不支持此功能 [(查看详情)](https://getrebuild.com/docs/rbv-features)')
     if (typeof message === 'string') message = WrapHtml(message)
     renderRbcomp(<RbAlertFree43 message={message} width="480" />)
+  }
+
+  // v4.5.1
+  static createSupportExpire45(message) {
+    const vn = (message.match(/vn=(VN-[\w]+)/) || [])[1]
+    const url = 'https://getrebuild.com/buy-license?type=fw&vn=' + (vn || '')
+
+    renderRbcomp(<RbAlertFree43 message={WrapHtml(message)} title={$L('技术支持服务提醒')} btnText={$L('立即续费')} btnLink={url} width="480" />)
   }
 }
 

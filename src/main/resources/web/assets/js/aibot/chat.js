@@ -366,7 +366,7 @@ class ChatInput extends React.Component {
               <i className={this.state.postState === 0 ? 'mdi mdi-arrow-up' : this.state.postState === 2 ? 'mdi mdi-spin mdi-loading' : 'mdi mdi-stop'} />
             </button>
           </div>
-          <input ref={(c) => (this._$file = c)} type="file" className="inputfile" data-maxsize="52428800" multiple />
+          <input ref={(c) => (this._$file = c)} type="file" className="inputfile" data-maxsize="20971520" multiple />
         </div>
       </div>
     )
@@ -1237,7 +1237,7 @@ class ChatSidebar extends React.Component {
   }
 
   componentDidUpdate(props, prevState) {
-    if (prevState.current !== this.state.current) {
+    if (prevState.current !== this.state.current && this.state.current) {
       $storage.set('__AiBotLastChatId', this.state.current)
     }
     if (prevState.list !== this.state.list) {
@@ -1408,7 +1408,7 @@ class Attach extends React.Component {
     } else if (props.file) {
       this.setState({
         name: `[${$L('文件')}] ${$fileCutName(props.file)}`,
-        viewUrl: `${rb.baseUrl}/commons/file-view?src=` + $encode(`/temp/${props.file}`),
+        viewUrl: `${rb.baseUrl}/commons/file-view?src=` + $encode(props.file),
       })
     } else if (props.skill) {
       this.setState({

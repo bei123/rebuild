@@ -398,10 +398,19 @@ class RbForm extends React.Component {
       _disableAutoFillin: this.props._disableAutoFillin,
     }
 
-    if (window._CustomizedForms) {
-      _ProTable = window._CustomizedForms.useProTable(dProps)
-      if (_ProTable === false) return null // 不显示
+    // v4.5 FrontJS 复写 ProTable
+    if (window.FrontJS) {
+      _ProTable = window.FrontJS.Form.__proTables[detailMeta.entity]
+      if (_ProTable === false) {
+        return null // 不显示
+      } else if (_ProTable) {
+        _ProTable = <_ProTable {...dProps} />
+      }
     }
+    // if (!_ProTable && window._CustomizedForms) {
+    //   _ProTable = window._CustomizedForms.useProTable(dProps)
+    //   if (_ProTable === false) return null // 不显示
+    // }
 
     function _addNew(n = 1) {
       for (let i = 0; i < n; i++) {
@@ -1047,10 +1056,10 @@ class RbForm extends React.Component {
 
   // 保存前调用（返回 false 则不继续保存）
   // eslint-disable-next-line no-unused-vars
-  static postBefore(data, formObject) {}
+  static postBefore(postData, formObject) {}
   // 保存后调用
   // eslint-disable-next-line no-unused-vars
-  static postAfter(data, next, formObject) {}
+  static postAfter(postData, nextAction, formObject) {}
   // 组件渲染后调用
   // eslint-disable-next-line no-unused-vars
   static renderAfter(formObject) {}
@@ -1626,7 +1635,7 @@ class RbFormNText extends RbFormElement {
           </a>
         )}
 
-        {props.useMdedit && !_readonly37 && <input type="file" className="hide" accept="image/*" data-noname="true" ref={(c) => (this._fieldValue__upload = c)} />}
+        {props.useMdedit && <input type="file" className="hide" accept="image/*" data-noname="true" ref={(c) => (this._fieldValue__upload = c)} />}
       </RF>
     )
   }
@@ -1688,7 +1697,7 @@ class RbFormNText extends RbFormElement {
     }
   }
 
-  onEditModeChanged(destroy) {
+  onEditModeChanged(destroy, fromReadonly41) {
     if (this.props.onView && this._fieldValue) {
       if (destroy) {
         $(this._fieldValue).perfectScrollbar()
@@ -1738,6 +1747,8 @@ class RbFormNText extends RbFormElement {
           </div>,
         )
       }
+    } else if (fromReadonly41 && this._EasyMDE) {
+      this._initEasyMDE()
     }
   }
 
@@ -1804,6 +1815,7 @@ class RbFormNText extends RbFormElement {
 
     if (_readonly37) {
       mde.codemirror.setOption('readOnly', true)
+      $(mde.codemirror.getWrapperElement()).addClass('cm-readonly')
     } else {
       $createUploader(this._fieldValue__upload, null, (res) => this._mdeInsert(`![](${rb.baseUrl}/filex/img/${res.key})`))
       if (this.props.onView) this._mdeFocus()
@@ -3992,11 +4004,16 @@ var detectElement = function (item, entity) {
   if (entity) {
     item.entity = entity
   }
-  // 复写的字段组件
-  if (entity && window._CustomizedForms) {
-    const c = window._CustomizedForms.useFormElement(entity, item)
-    if (c) return c
+  // v4.5 FrontJS 复写字段组件
+  if (window.FrontJS && item.entity) {
+    const _Comp = window.FrontJS.Form.__formElements[`${item.entity}.${item.field}`]
+    if (_Comp) return <_Comp {...item} />
   }
+  // // 复写的字段组件
+  // if (entity && window._CustomizedForms) {
+  //   const c = window._CustomizedForms.useFormElement(entity, item)
+  //   if (c) return c
+  // }
 
   if (item.unreadable === true) {
     return <RbFormUnreadable {...item} />

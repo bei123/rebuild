@@ -142,13 +142,9 @@ public class AiBot2AdminController extends BaseController {
         OpenAIClient client;
         if (StringUtils.isNotBlank(baseUrl) || StringUtils.isNotBlank(apiKey)) {
             if (StringUtils.isBlank(baseUrl)) baseUrl = Config.getServerUrl(null);
-            if (StringUtils.isBlank(apiKey)) {
-                if (!Config.availableAiBot()) return RespBody.errorl("AI 助手未配置");
-                apiKey = Config.getSecret();
-            }
+            if (StringUtils.isBlank(apiKey)) apiKey = Config.getSecret();
             client = Config.getClient(baseUrl, apiKey);
         } else {
-            if (!Config.availableAiBot()) return RespBody.errorl("AI 助手未配置");
             client = Config.getClient();
         }
 
@@ -182,11 +178,6 @@ public class AiBot2AdminController extends BaseController {
         ModelAndView mv = createModelAndView("/admin/integration/aibot-kits");
         mv.getModel().put("_McpServerUrl", RebuildConfiguration.getHomeUrl("/gw/mcp/sse"));
         return mv;
-    }
-
-    @GetMapping("aibot-agents")
-    public ModelAndView pageIntegrationAibotAgents() {
-        return createModelAndView("/admin/integration/aibot-agents");
     }
 
     @GetMapping("aibot/tools")
@@ -253,5 +244,15 @@ public class AiBot2AdminController extends BaseController {
         KnowledgeBuilder.updateChunkCount(knowledgeId, -1);
         KnowledgeBuilder.buildAsync(knowledgeId);
         return RespBody.ok();
+    }
+
+    @GetMapping("aibot-agents")
+    public ModelAndView pageIntegrationAibotAgents() {
+        return createModelAndView("/admin/integration/aibot-agents");
+    }
+
+    @GetMapping("aibot-minapps")
+    public ModelAndView pageIntegrationAibotMinapps() {
+        return createModelAndView("/admin/integration/aibot-minapps");
     }
 }
